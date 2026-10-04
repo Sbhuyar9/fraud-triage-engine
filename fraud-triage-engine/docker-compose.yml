@@ -1,0 +1,53 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: fraud-mysql
+    environment:
+      MYSQL_DATABASE: fraud_triage
+      MYSQL_USER: fraud
+      MYSQL_PASSWORD: fraud
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "fraud", "-pfraud"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  agent-orchestrator:
+    build: ./agent-orchestrator
+    container_name: fraud-agent
+    environment:
+      POLICY_DIR: /app/policy_docs
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./agent-orchestrator/app/rag/policy_docs:/app/policy_docs:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  gateway-service:
+    build: ./gateway-service
+    container_name: fraud-gateway
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/fraud_triage?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: fraud
+      SPRING_DATASOURCE_PASSWORD: fraud
+      AGENT_BASE_URL: http://agent-orchestrator:8000
+      JWT_SECRET: change-this-demo-secret-change-this-demo-secret
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      agent-orchestrator:
+        condition: service_healthy
+
+volumes:
+  mysql_data:

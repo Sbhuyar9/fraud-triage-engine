@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3307/fraud_triage?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${SPRING_DATASOURCE_USERNAME:fraud}
+    password: ${SPRING_DATASOURCE_PASSWORD:fraud}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+agent:
+  base-url: ${AGENT_BASE_URL:http://localhost:8000}
+
+jwt:
+  secret: ${JWT_SECRET:change-this-demo-secret-change-this-demo-secret}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
